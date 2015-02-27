@@ -35,33 +35,45 @@ Sub Main
     '--------------------
     '・設定読込
 	'--------------------
-    Dim Library_Source_Path: Library_Source_Path = _
-        IniFile.ReadString("Option", "LibrarySourcePath01", "")
-        
-	Dim Library_Dest_Path: Library_Dest_Path = _
-    	".\Lib\StandardSoftwareLibrary.vbs"
-        
+    Dim SupportTool_Source_Path: SupportTool_Source_Path = _
+        IniFile.ReadString("Option", "SupportToolSourcePath", "")
     '--------------------
 
-    Dim SourcePath: SourcePath = _
-        AbsoluteFilePath(ScriptFolderPath, Library_Source_Path)
-    If not fso.FileExists(SourcePath) Then
+    Dim SourceFolderPath: SourceFolderPath = _
+        AbsoluteFilePath(ScriptFolderPath, SupportTool_Source_Path)
+    If not fso.FolderExists(SourceFolderPath) Then
         WScript.Echo _
-            "コピー元ファイルが見つかりません" + vbCrLF + _
-            SourcePath
+            "コピー元フォルダが見つかりません" + vbCrLF + _
+            SourceFolderPath
         Exit Sub
     End If
 
-    Dim DestPath: DestPath = _
-        AbsoluteFilePath(ScriptFolderPath, Library_Dest_Path)
-        
-    Call ForceCreateFolder(fso.GetParentFolderName(DestPath))
+    Dim DestFolderPath: DestFolderPath = _
+        ScriptFolderPath
 
-    Call fso.CopyFile(SourcePath, DestPath)
-    MessageText = SourcePath + vbCrLf + _
-        ">> " + DestPath
+    If LCase(SourceFolderPath) = LCase(DestFolderPath) Then
+        WScript.Echo _
+            "コピー先とコピー元のフォルダが同一です。" + vbCrLF + _
+            SourceFolderPath
+        Exit Sub
+    End If
+
+'    Call CopyFolderOverWriteIgnore( _
+'        SourceFolderPath, DestFolderPath, "*.ini")
+
+    Call DeleteFileTargetPath( _
+        DestFolderPath, "*.vbs")
+
+    Call CopyFolderIgnorePath( _
+        SourceFolderPath, DestFolderPath, "*.ini,Update_Lib-Here.vbs")
+
+
+    MessageText = MessageText + _
+        DestFolderPath + vbCrLf
+
     WScript.Echo _
         "Finish " + WScript.ScriptName + vbCrLf + _
         "----------" + vbCrLf + _
         Trim(MessageText)
 End Sub
+

@@ -32,15 +32,21 @@ Sub Main
     Dim IniFile: Set IniFile = New IniFile
     Call IniFile.Initialize(IniFilePath)
 
-    '--------------------
+    '------------------------------
     '・設定読込
-    '--------------------
+    '------------------------------
     Dim Library_Source_Path: Library_Source_Path = _
         IniFile.ReadString("Option", "LibrarySourcePath", "")
 
     Dim ProjectName: ProjectName = _
         IniFile.ReadString("Option", "ProjectName", "")
-    '--------------------
+
+    Dim IgnoreFileFolderName: IgnoreFileFolderName = _
+        IniFile.ReadString("Option", "ReleaseIgnoreFileFolderName", "")
+
+    Dim IncludeFileFolderPath: IncludeFileFolderPath = _
+        IniFile.ReadString("Option", "ReleaseIncludeFileFolderPath", "")
+    '------------------------------
 
     Dim NowValue: NowValue = Now
     Dim ReleaseFolderPath: ReleaseFolderPath = _
@@ -63,22 +69,39 @@ Sub Main
     End If
 
     'フォルダ再生成コピー
-    Call ReCreateCopyFolder(SourceFolderPath, ReleaseFolderPath)
+'    Call ReCreateCopyFolder(SourceFolderPath, ReleaseFolderPath)
+    Call ReCreateFolder(fso.GetParentFolderName(ReleaseFolderPath))
+    Call CopyFolderIgnorePath( _
+        SourceFolderPath, ReleaseFolderPath, _
+        IgnoreFileFolderName)
 
     MessageText = MessageText + _
         fso.GetFileName(SourceFolderPath) + vbCrLf
 
-    'バージョン情報ファイル
-    Dim VersionInfoFilePath: VersionInfoFilePath = _
-        "..\..\version.txt"
-    VersionInfoFilePath = _
-        AbsoluteFilePath(ScriptFolderPath, VersionInfoFilePath)
-    If fso.FileExists(VersionInfoFilePath) Then
-        Call fso.CopyFile( _
-            VersionInfoFilePath, _
-                IncludeLastPathDelim(ReleaseFolderPath) + _
-                fso.GetFileName(VersionInfoFilePath))
-    End If
+    'バージョン情報ファイルやReadme.txtの指定など
+    Dim IncludeFileFolderArray: IncludeFileFolderArray = _
+        Split(IncludeFileFolderPath, ",")
+    Dim I
+    For I = 0 To ArrayCount(IncludeFileFolderArray) - 1
+        IncludeFileFolderArray(I) = _
+            AbsoluteFilePath(ScriptFolderPath, IncludeFileFolderArray(I))
+        If fso.FileExists(IncludeFileFolderArray(I)) Then
+            Call ForceCreateFolder(ReleaseFolderPath)
+            Call fso.CopyFile( _
+                IncludeFileFolderArray(I), _
+                    IncludeLastPathDelim(ReleaseFolderPath) + _
+                    fso.GetFileName(IncludeFileFolderArray(I)))
+        ElseIf fso.FolderExists(IncludeFileFolderArray(I)) Then
+            Call ForceCreateFolder(ReleaseFolderPath)
+            Call fso.CopyFolder( _
+                IncludeFileFolderArray(I), _
+                    IncludeLastPathDelim(ReleaseFolderPath) + _
+                    fso.GetFileName(IncludeFileFolderArray(I)))
+        Else
+            MessageText = MessageText + _
+                "Warning:Include File/Folder not found."
+        End If
+    Next
 
     WScript.Echo _
         "Finish " + WScript.ScriptName + vbCrLf + _
