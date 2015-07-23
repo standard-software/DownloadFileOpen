@@ -3,19 +3,16 @@ Option Explicit
 '--------------------------------------------------
 '■Include Standard Software Library
 '--------------------------------------------------
-'FileNameには相対アドレスも指定可能
-'--------------------------------------------------
-'Include ".\Test\..\..\StandardSoftwareLibrary_vbs\StandardSoftwareLibrary.vbs"  
-Call Include(".\Lib\StandardSoftwareLibrary.vbs")
-
 Sub Include(ByVal FileName)
     Dim fso: Set fso = WScript.CreateObject("Scripting.FileSystemObject") 
     Dim Stream: Set Stream = fso.OpenTextFile( _
         fso.GetParentFolderName(WScript.ScriptFullName) _
         + "\" + FileName, 1)
-    ExecuteGlobal Stream.ReadAll() 
+    Call ExecuteGlobal(Stream.ReadAll())
     Call Stream.Close
 End Sub
+'--------------------------------------------------
+Call Include(".\Lib\st.vbs")
 '--------------------------------------------------
 
 '------------------------------
@@ -36,16 +33,26 @@ Sub Main
     '・設定読込
     '------------------------------
     Dim BackupSourceFolderPaths: BackupSourceFolderPaths = _
-        IniFile.ReadString("Option", "BackupSourceFolderPaths", "..\..\Source")
+        IniFile.ReadString("SourceBackup", "BackupSourceFolderPaths", "")
+    If BackupSourceFolderPaths = "" Then
+        WScript.Echo _
+            "設定が読み取れていません"
+        Exit Sub
+    End If
 
     Dim BackupDestFolderPaths: BackupDestFolderPaths = _
-        IniFile.ReadString("Option", "BackupDestFolderPaths", "..\..\Backup\Source")
+        IniFile.ReadString("SourceBackup", "BackupDestFolderPaths", "")
+    If BackupDestFolderPaths = "" Then
+        WScript.Echo _
+            "設定が読み取れていません"
+        Exit Sub
+    End If
     'BackupSourceFolderPaths と BackupDestFolderPaths は
     'カンマ区切りで同じ個数のフォルダ指定とする
 
     Dim BackupFolderLastYYYY_MM_DD: BackupFolderLastYYYY_MM_DD = _
-        IniFile.ReadString("Option", "BackupFolderLastYYYY_MM_DD", "True")
-    If UCase(BackupFolderLastYYYY_MM_DD) = "TRUE" Then
+        IniFile.ReadString("SourceBackup", "BackupFolderLastYYYY_MM_DD", "True")
+    If LCase(BackupFolderLastYYYY_MM_DD) = "true" Then
         BackupFolderLastYYYY_MM_DD = True
     Else
         BackupFolderLastYYYY_MM_DD = False
